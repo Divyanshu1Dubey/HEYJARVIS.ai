@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeyJarvis — Patient Recapture Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #111118;
+            --bg-tertiary: #1a1a24;
+            --bg-card: #16161f;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9090a8;
+            --text-muted: #606078;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --accent-dark: #5a4bd1;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #e17055;
+            --danger-light: #ff7675;
+            --border: #252535;
+            --border-light: #303040;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text span {
+            color: var(--accent-light);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background: var(--border);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        /* Layout */
+        .app {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: calc(100vh - 61px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            padding: 0 16px;
+            margin-bottom: 20px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 12px 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 14px;
+            transition: all 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .nav-item .icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main {
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            color: var(--danger);
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Table */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .patient-name {
+            font-weight: 500;
+        }
+
+        .patient-email {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-lead { background: #6c5ce720; color: #a29bfe; }
+        .badge-cancelled { background: #e1705520; color: #e17055; }
+        .badge-noshow { background: #fdcb6e20; color: #fdcb6e; }
+        .badge-treatment { background: #00b89420; color: #00b894; }
+        .badge-recall { background: #74b9ff20; color: #74b9ff; }
+        .badge-booking { background: #fd79a820; color: #fd79a8; }
+        .badge-active { background: #00b89420; color: #00b894; }
+        .badge-pending { background: #fdcb6e20; color: #fdcb6e; }
+
+        /* Chat */
+        .chat-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 16px;
+            height: calc(100vh - 200px);
+        }
+
+        .chat-main {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .chat-message {
+            margin-bottom: 16px;
+            max-width: 75%;
+        }
+
+        .chat-message.inbound {
+            margin-right: auto;
+        }
+
+        .chat-message.outbound {
+            margin-left: auto;
+        }
+
+        .chat-bubble {
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-message.inbound .chat-bubble {
+            background: var(--bg-tertiary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-message.outbound .chat-bubble {
+            background: var(--accent);
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chat-sidebar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .chat-sidebar-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .conversation-list-item {
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: background 0.15s;
+        }
+
+        .conversation-list-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .conversation-list-item.active {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            font-size: 14px;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--accent-light);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Page sections */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Chart placeholder */
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 200px;
+            padding: 20px;
+        }
+
+        .bar {
+            flex: 1;
+            background: var(--accent);
+            border-radius: 6px 6px 0 0;
+            min-height: 10px;
+            position: relative;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* Search */
+        .search-bar {
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            width: 300px;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .main { padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .chat-container { grid-template-columns: 1fr; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-title {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">⬦</div>
+            <div class="logo-text">Hey<span>Jarvis</span></div>
+        </div>
+        <div class="header-actions">
+            <span style="font-size: 12px; color: var(--text-muted);">
+                Demo Mode — Bright Smile Dental
+            </span>
+            <button class="btn" onclick="showPage('dashboard')">Dashboard</button>
+            <button class="btn" onclick="showPage('patients')">Patients</button>
+            <button class="btn" onclick="showPage('conversations')">Messages</button>
+        </div>
+    </div>
+
+    <!-- App -->
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="nav-section">
+                <div class="nav-label">Main</div>
+                <div class="nav-item active" onclick="showPage('dashboard')">
+                    <span class="icon">📊</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" onclick="showPage('patients')">
+                    <span class="icon">👥</span>
+                    <span>Patients</span>
+                    <span class="nav-badge" id="patient-count">0</span>
+                </div>
+                <div class="nav-item" onclick="showPage('opportunities')">
+                    <span class="icon">🎯</span>
+                    <span>Opportunities</span>
+                    <span class="nav-badge" id="opp-count">0</span>
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Engage</div>
+                <div class="nav-item" onclick="showPage('conversations')">
+                    <span class="icon">💬</span>
+                    <span>Conversations</span>
+                </div>
+                <div class="nav-item" onclick="showPage('campaigns')">
+                    <span class="icon">📣</span>
+                    <span>Campaigns</span>
+                </div>
+                <div class="nav-item" onclick="showPage('appointments')">
+                    <span class="icon">📅</span>
+                    <span>Appointments</span>
+                </div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Insights</div>
+                <div class="nav-item" onclick="showPage('analytics')">
+                    <span class="icon">📈</span>
+                    <span>Analytics</span>
+                </div>
+                <div class="nav-item" onclick="showPage('settings')">
+                    <span class="icon">⚙️</span>
+                    <span>Settings</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main">
+            <!-- Dashboard Page -->
+            <div id="page-dashboard" class="page active">
+                <h1 class="page-title">Dashboard</h1>
+                <p class="page-subtitle">Patient recapture overview — Bright Smile Dental</p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Patients</div>
+                        <div class="stat-value" id="stat-total-patients">—</div>
+                        <div class="stat-change">Across all categories</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Recapture Opportunities</div>
+                        <div class="stat-value" id="stat-total-opps">—</div>
+                        <div class="stat-change positive">Active pipeline</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Potential Revenue</div>
+                        <div class="stat-value" id="stat-revenue">—</div>
+                        <div class="stat-change">If all recovered</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Campaigns</div>
+                        <div class="stat-value" id="stat-campaigns">5</div>
+                        <div class="stat-change">Running now</div>
+                    </div>
+                </div>
+
+                <!-- Revenue Chart -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">Revenue by Opportunity Type</div>
+                    </div>
+                    <div class="table-container" style="padding: 20px;">
+                        <div class="bar-chart" id="revenue-chart"></div>
+                    </div>
+                </div>
+
+                <!-- Recent Opportunities -->
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">Top Opportunities</div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Value</th>
+                                    <th>Channel</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="opportunities-table">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients Page -->
+            <div id="page-patients" class="page">
+                <h1 class="page-title">Patients</h1>
+                <p class="page-subtitle">All patients in the recapture system</p>
+
+                <div class="section">
+                    <div class="section-header">
+                        <input type="text" class="search-bar" placeholder="Search patients..." id="patient-search" oninput="filterPatients()">
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>State</th>
+                                    <th>Category</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patients-table">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opportunities Page -->
+            <div id="page-opportunities" class="page">
+                <h1 class="page-title">Recapture Opportunities</h1>
+                <p class="page-subtitle">All identified recapture opportunities</p>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="filterOpportunities('all', this)">All</div>
+                    <div class="tab" onclick="filterOpportunities('lead', this)">Lead</div>
+                    <div class="tab" onclick="filterOpportunities('cancelled', this)">Cancelled</div>
+                    <div class="tab" onclick="filterOpportunities('no_show', this)">No-Show</div>
+                    <div class="tab" onclick="filterOpportunities('treatment', this)">Treatment</div>
+                    <div class="tab" onclick="filterOpportunities('recall', this)">Recall</div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Priority</th>
+                                <th>Value</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opportunities-full-table">
+                            <!-- Filled by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conversations Page -->
+            <div id="page-conversations" class="page">
+                <h1 class="page-title">Conversations</h1>
+                <p class="page-subtitle">Patient conversations and AI interactions</p>
+
+                <div class="chat-container">
+                    <div class="chat-main">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">💬</div>
+                                <div class="empty-state-title">Select a conversation</div>
+                                <p>Choose a conversation from the sidebar to view messages</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" class="chat-input" id="chat-message-input"
+                                   placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChatMessage()">
+                            <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
+                        </div>
+                    </div>
+                    <div class="chat-sidebar">
+                        <div class="chat-sidebar-title">Conversations</div>
+                        <div id="conversation-list">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campaigns Page -->
+            <div id="page-campaigns" class="page">
+                <h1 class="page-title">Campaigns</h1>
+                <p class="page-subtitle">Active recapture campaigns</p>
+
+                <div style="display: grid; gap: 16px;" id="campaigns-grid">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div id="page-analytics" class="page">
+                <h1 class="page-title">Analytics</h1>
+                <p class="page-subtitle">Performance metrics and insights</p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Response Rate</div>
+                        <div class="stat-value">16.2%</div>
+                        <div class="stat-change positive">+2.1% vs last month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Booking Recovery</div>
+                        <div class="stat-value">8.0%</div>
+                        <div class="stat-change positive">+1.5% vs last month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Revenue Recovered</div>
+                        <div class="stat-value">$4,850</div>
+                        <div class="stat-change positive">This month</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg. Time to Book</div>
+                        <div class="stat-value">2.3 days</div>
+                        <div class="stat-change negative">+0.5 days</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">Channel Performance</div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Channel</th>
+                                    <th>Sent</th>
+                                    <th>Delivered</th>
+                                    <th>Replied</th>
+                                    <th>Booked</th>
+                                    <th>Response Rate</th>
+                                    <th>Conversion Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>SMS</strong></td>
+                                    <td>150</td>
+                                    <td>142</td>
+                                    <td>23</td>
+                                    <td>12</td>
+                                    <td>16.2%</td>
+                                    <td>8.0%</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email</strong></td>
+                                    <td>80</td>
+                                    <td>75</td>
+                                    <td>8</td>
+                                    <td>3</td>
+                                    <td>10.7%</td>
+                                    <td>4.0%</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Voice</strong></td>
+                                    <td>20</td>
+                                    <td>18</td>
+                                    <td>6</td>
+                                    <td>4</td>
+                                    <td>33.3%</td>
+                                    <td>22.0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments Page -->
+            <div id="page-appointments" class="page">
+                <h1 class="page-title">Appointments</h1>
+                <p class="page-subtitle">Upcoming and recent appointments</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Provider</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="patient-name">James Wilson</td>
+                                <td>Teeth Whitening</td>
+                                <td>Today, 3:20 PM</td>
+                                <td>Dr. Sarah Mitchell</td>
+                                <td><span class="badge badge-active">Confirmed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="patient-name">Emily Rodriguez</td>
+                                <td>Implant Consultation</td>
+                                <td>Tomorrow, 10:00 AM</td>
+                                <td>Dr. James Chen</td>
+                                <td><span class="badge badge-pending">Scheduled</span></td>
+                            </tr>
+                            <tr>
+                                <td class="patient-name">Sarah Johnson</td>
+                                <td>Dental Cleaning</td>
+                                <td>Fri, Jan 10, 2:00 PM</td>
+                                <td>Dr. Sarah Mitchell</td>
+                                <td><span class="badge badge-pending">Scheduled</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="page-settings" class="page">
+                <h1 class="page-title">Settings</h1>
+                <p class="page-subtitle">Clinic configuration and preferences</p>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">Clinic Information</div>
+                    </div>
+                    <div class="table-container" style="padding: 20px;">
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Clinic Name</label>
+                            <div style="font-size: 14px;">Bright Smile Dental</div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Address</label>
+                            <div style="font-size: 14px;">123 Main Street, Suite 100, Austin, TX 78701</div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Phone</label>
+                            <div style="font-size: 14px;">(512) 555-0142</div>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Timezone</label>
+                            <div style="font-size: 14px;">America/Chicago (CT)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-title">Communication Channels</div>
+                    </div>
+                    <div class="table-container" style="padding: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                            <div>
+                                <div style="font-weight: 500;">SMS</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">Twilio (mock mode)</div>
+                            </div>
+                            <span class="badge badge-active">Active</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                            <div>
+                                <div style="font-weight: 500;">Email</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">Postmark (mock mode)</div>
+                            </div>
+                            <span class="badge badge-active">Active</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
+                            <div>
+                                <div style="font-weight: 500;">Web Chat</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">Embedded widget</div>
+                            </div>
+                            <span class="badge badge-active">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ===================================================================
+    // Demo Data (in production, fetched from API)
+    // ===================================================================
+    const DEMO_PATIENTS = [
+        { id: "p1", first_name: "James", last_name: "Wilson", phone: "+1-512-555-0101", email: "james.wilson@example.com", state: "lead_abandoned", category: "Lead Abandoned", value: 300, notes: "Interested in teeth whitening", recapture_reason: "Submitted form but never booked" },
+        { id: "p2", first_name: "Emily", last_name: "Rodriguez", phone: "+1-512-555-0102", email: "emily.r@example.com", state: "lead_abandoned", category: "Web Chat Abandoned", value: 3500, notes: "Asked about implants", recapture_reason: "Chat disconnected mid-conversation" },
+        { id: "p3", first_name: "Michael", last_name: "Thompson", phone: "+1-512-555-0103", email: "mthompson@example.com", state: "no_response", category: "Missed Call", value: 200, notes: "Left voicemail", recapture_reason: "Called after hours" },
+        { id: "p4", first_name: "Sarah", last_name: "Johnson", phone: "+1-512-555-0201", email: "sarah.j@example.com", state: "cancelled", category: "Cancelled", value: 150, notes: "Work meeting conflict", recapture_reason: "Scheduling conflict" },
+        { id: "p5", first_name: "David", last_name: "Martinez", phone: "+1-512-555-0202", email: "dmartinez@example.com", state: "cancelled", category: "Cancelled", value: 1200, notes: "Has Delta, cost concern", recapture_reason: "Price concern" },
+        { id: "p6", first_name: "Lisa", last_name: "Anderson", phone: "+1-512-555-0203", email: "lisa.a@example.com", state: "cancelled", category: "Cancelled", value: 1500, notes: "Dental anxiety", recapture_reason: "Fear/anxiety" },
+        { id: "p7", first_name: "Robert", last_name: "Taylor", phone: "+1-512-555-0301", email: "rtaylor@example.com", state: "no_show", category: "No-Show", value: 150, notes: "Forgot appointment", recapture_reason: "First no-show" },
+        { id: "p8", first_name: "Jennifer", last_name: "Brown", phone: "+1-512-555-0302", email: "jbrown@example.com", state: "no_show", category: "No-Show", value: 150, notes: "Transportation issues", recapture_reason: "Repeat no-show" },
+        { id: "p9", first_name: "William", last_name: "Davis", phone: "+1-512-555-0401", email: "wdavis@example.com", state: "treatment_unscheduled", category: "Treatment", value: 1200, notes: "Needs crown on #30", recapture_reason: "Treatment plan not scheduled" },
+        { id: "p10", first_name: "Amanda", last_name: "White", phone: "+1-512-555-0402", email: "awhite@example.com", state: "treatment_unscheduled", category: "Treatment", value: 1500, notes: "Experiencing pain", recapture_reason: "Accepted plan, not scheduled" },
+        { id: "p11", first_name: "Jessica", last_name: "Garcia", phone: "+1-512-555-0501", email: "jgarcia@example.com", state: "recall_due", category: "Recall", value: 150, notes: "6 months overdue", recapture_reason: "Hygiene recall overdue" },
+        { id: "p12", first_name: "Daniel", last_name: "Martinez", phone: "+1-512-555-0502", email: "dmartinez2@example.com", state: "inactive", category: "Inactive", value: 200, notes: "18 months since visit", recapture_reason: "Inactive patient" },
+        { id: "p13", first_name: "Kevin", last_name: "Clark", phone: "+1-512-555-0601", email: "kclark@example.com", state: "booking_pending", category: "Booking", value: 150, notes: "Selected Friday 3pm", recapture_reason: "Booking flow abandoned" },
+        { id: "p14", first_name: "Rachel", last_name: "Harris", phone: "+1-512-555-0801", email: "rharris@example.com", state: "booking_pending", category: "Insurance", value: 1200, notes: "Has MetLife", recapture_reason: "Insurance question unresolved" },
+        { id: "p15", first_name: "Steven", last_name: "King", phone: "+1-512-555-0901", email: "sking@example.com", state: "lead_abandoned", category: "After Hours", value: 200, notes: "Saturday request", recapture_reason: "After-hours lead" },
+    ];
+
+    const DEMO_CONVERSATIONS = [
+        { id: "c1", patient_id: "p1", patient_name: "James Wilson", last_message: "Hi, I submitted a form about teeth whitening but never heard back.", time: "2 hours ago", channel: "sms" },
+        { id: "c2", patient_id: "p5", patient_name: "David Martinez", last_message: "I need to cancel, too expensive.", time: "5 hours ago", channel: "sms" },
+        { id: "c3", patient_id: "p2", patient_name: "Emily Rodriguez", last_message: "I broke my front tooth and have a wedding Saturday.", time: "1 day ago", channel: "web" },
+    ];
+
+    const DEMO_CAMPAIGNS = [
+        { id: "camp1", name: "Abandoned Lead Recovery", type: "lead_abandoned", status: "active", sent: 45, replied: 12, booked: 5, description: "Re-engage patients who submitted forms but never booked" },
+        { id: "camp2", name: "Cancellation Recovery", type: "cancelled", status: "active", sent: 30, replied: 8, booked: 4, description: "Recover cancelled appointments with reschedule offers" },
+        { id: "camp3", name: "No-Show Recovery", type: "no_show", status: "active", sent: 25, replied: 6, booked: 3, description: "Re-engage patients who missed appointments" },
+        { id: "camp4", name: "Treatment Plan Follow-Up", type: "treatment_unscheduled", status: "active", sent: 15, replied: 4, booked: 2, description: "Follow up on accepted treatment plans" },
+        { id: "camp5", name: "Hygiene Recall", type: "recall_due", status: "active", sent: 40, replied: 10, booked: 6, description: "Reactivate patients overdue for cleaning" },
+    ];
+
+    const DEMO_MESSAGES = {
+        c1: [
+            { direction: "inbound", body: "Hi, I submitted a form about teeth whitening but never heard back.", time: "3 hours ago" },
+            { direction: "outbound", body: "Hi James! Welcome to Bright Smile Dental. Thanks for reaching out about teeth whitening! We have openings this week. Would you like me to check availability?", time: "3 hours ago" },
+            { direction: "inbound", body: "Yes, I'd love to know what times are available.", time: "2 hours ago" },
+        ],
+        c2: [
+            { direction: "inbound", body: "I need to cancel my appointment, too expensive.", time: "5 hours ago" },
+            { direction: "outbound", body: "I understand cost is a concern. We offer several payment options including CareCredit and in-house payment plans. Let me connect you with our billing team.", time: "5 hours ago" },
+        ],
+        c3: [
+            { direction: "inbound", body: "I broke my front tooth. I have Delta and a wedding Saturday.", time: "1 day ago" },
+            { direction: "outbound", body: "I'm sorry about your tooth! We can see you today. We accept Delta Dental — Dr. Mitchell can see you today at 3:20 PM. Want help getting booked?", time: "1 day ago" },
+        ],
+    };
+
+    const STATE_BADGE_MAP = {
+        "lead_abandoned": "badge-lead",
+        "no_response": "badge-lead",
+        "cancelled": "badge-cancelled",
+        "no_show": "badge-noshow",
+        "treatment_unscheduled": "badge-treatment",
+        "recall_due": "badge-recall",
+        "booking_pending": "badge-booking",
+        "inactive": "badge-lead",
+    };
+
+    const STATE_LABEL_MAP = {
+        "lead_abandoned": "Lead Abandoned",
+        "no_response": "No Response",
+        "cancelled": "Cancelled",
+        "no_show": "No-Show",
+        "treatment_unscheduled": "Treatment Unscheduled",
+        "recall_due": "Recall Due",
+        "booking_pending": "Booking Pending",
+        "inactive": "Inactive",
+    };
+
+    const CATEGORY_COLORS = {
+        "Lead Abandoned": "#a29bfe",
+        "Web Chat Abandoned": "#a29bfe",
+        "Missed Call": "#fdcb6e",
+        "Cancelled": "#e17055",
+        "No-Show": "#fdcb6e",
+        "Treatment": "#00b894",
+        "Recall": "#74b9ff",
+        "Booking": "#fd79a8",
+        "Insurance": "#81ecec",
+        "After Hours": "#ffeaa7",
+        "Inactive": "#b2bec3",
+    };
+
+    // ===================================================================
+    // Navigation
+    // ===================================================================
+    let currentConversation = null;
+    let currentOppFilter = 'all';
+
+    function showPage(pageId) {
+        // Hide all pages
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        // Show selected page
+        document.getElementById('page-' + pageId).classList.add('active');
+        // Update nav
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        event.target.closest('.nav-item')?.classList.add('active');
+    }
+
+    // ===================================================================
+    // Dashboard
+    // ===================================================================
+    function initDashboard() {
+        const patients = DEMO_PATIENTS;
+        const totalValue = patients.reduce((s, p) => s + p.value, 0);
+
+        document.getElementById('stat-total-patients').textContent = patients.length;
+        document.getElementById('stat-total-opps').textContent = patients.length;
+        document.getElementById('stat-revenue').textContent = '$' + totalValue.toLocaleString();
+        document.getElementById('patient-count').textContent = patients.length;
+        document.getElementById('opp-count').textContent = patients.length;
+
+        // Revenue chart
+        const categories = {};
+        patients.forEach(p => {
+            const cat = p.category.split(' ')[0];
+            categories[cat] = (categories[cat] || 0) + p.value;
+        });
+
+        const maxVal = Math.max(...Object.values(categories));
+        const chartEl = document.getElementById('revenue-chart');
+        chartEl.innerHTML = Object.entries(categories).map(([cat, val]) => `
+            <div class="bar" style="height: ${(val/maxVal)*100}%; background: ${CATEGORY_COLORS[cat + (cat === 'Treatment' ? '' : '')}">
+                <div class="bar-value">$${(val/1000).toFixed(1)}k</div>
+                <div class="bar-label">${cat}</div>
+            </div>
+        `).join('');
+
+        // Opportunities table
+        const oppTable = document.getElementById('opportunities-table');
+        oppTable.innerHTML = patients.slice(0, 5).map(p => `
+            <tr>
+                <td><div class="patient-name">${p.first_name} ${p.last_name}</div><div class="patient-email">${p.email}</div></td>
+                <td><span class="badge ${STATE_BADGE_MAP[p.state] || 'badge-pending'}">${p.category}</span></td>
+                <td>$${p.value.toLocaleString()}</td>
+                <td>SMS</td>
+                <td><span class="badge badge-pending">Pending</span></td>
+            </tr>
+        `).join('');
+    }
+
+    // ===================================================================
+    // Patients
+    // ===================================================================
+    function renderPatients(patients) {
+        const table = document.getElementById('patients-table');
+        table.innerHTML = patients.map(p => `
+            <tr>
+                <td>
+                    <div class="patient-name">${p.first_name} ${p.last_name}</div>
+                </td>
+                <td style="color: var(--text-secondary);">${p.phone || '—'}</td>
+                <td style="color: var(--text-secondary);">${p.email || '—'}</td>
+                <td><span class="badge ${STATE_BADGE_MAP[p.state] || 'badge-pending'}">${STATE_LABEL_MAP[p.state] || p.state}</span></td>
+                <td style="color: var(--text-secondary);">${p.category}</td>
+                <td>$${p.value.toLocaleString()}</td>
+            </tr>
+        `).join('');
+    }
+
+    function filterPatients() {
+        const query = document.getElementById('patient-search').value.toLowerCase();
+        const filtered = DEMO_PATIENTS.filter(p =>
+            p.first_name.toLowerCase().includes(query) ||
+            p.last_name.toLowerCase().includes(query) ||
+            p.email.toLowerCase().includes(query) ||
+            p.phone.includes(query)
+        );
+        renderPatients(filtered);
+    }
+
+    // ===================================================================
+    // Opportunities
+    // ===================================================================
+    function renderOpportunities(filter = 'all') {
+        const table = document.getElementById('opportunities-full-table');
+        let patients = DEMO_PATIENTS;
+
+        if (filter !== 'all') {
+            const filterMap = {
+                'lead': ['lead_abandoned', 'no_response'],
+                'cancelled': ['cancelled'],
+                'no_show': ['no_show'],
+                'treatment': ['treatment_unscheduled'],
+                'recall': ['recall_due', 'inactive'],
+                'booking': ['booking_pending'],
+            };
+            const states = filterMap[filter] || [];
+            patients = patients.filter(p => states.includes(p.state));
+        }
+
+        table.innerHTML = patients.map(p => `
+            <tr>
+                <td><div class="patient-name">${p.first_name} ${p.last_name}</div></td>
+                <td><span class="badge ${STATE_BADGE_MAP[p.state]}">${p.category}</span></td>
+                <td style="color: var(--text-secondary); max-width: 300px;">${p.recapture_reason}</td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="flex: 1; height: 6px; background: var(--bg-secondary); border-radius: 3px; width: 80px;">
+                            <div style="width: ${p.value > 1000 ? 90 : p.value > 500 ? 70 : 50}%; height: 100%; background: var(--accent); border-radius: 3px;"></div>
+                        </div>
+                        <span style="font-size: 12px;">${p.value > 1000 ? 'High' : p.value > 500 ? 'Med' : 'Low'}</span>
+                    </div>
+                </td>
+                <td>$${p.value.toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="sendMessage('${p.id}')">Message</button>
+                    <button class="btn btn-sm" onclick="viewPatient('${p.id}')">View</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterOpportunities(filter, el) {
+        currentOppFilter = filter;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderOpportunities(filter);
+    }
+
+    // ===================================================================
+    // Conversations
+    // ===================================================================
+    function renderConversations() {
+        const list = document.getElementById('conversation-list');
+        list.innerHTML = DEMO_CONVERSATIONS.map(c => `
+            <div class="conversation-list-item ${currentConversation === c.id ? 'active' : ''}"
+                 onclick="loadConversation('${c.id}')">
+                <div style="font-weight: 500; font-size: 13px;">${c.patient_name}</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${c.last_message.substring(0, 40)}...
+                </div>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                    ${c.time} · ${c.channel.toUpperCase()}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function loadConversation(convId) {
+        currentConversation = convId;
+        renderConversations();
+
+        const messages = DEMO_MESSAGES[convId] || [];
+        const container = document.getElementById('chat-messages');
+
+        container.innerHTML = messages.map(m => `
+            <div class="chat-message ${m.direction}">
+                <div class="chat-bubble">${m.body}</div>
+                <div class="chat-meta">${m.time}</div>
+            </div>
+        `).join('');
+
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-message-input');
+        const body = input.value.trim();
+        if (!body || !currentConversation) return;
+
+        const container = document.getElementById('chat-messages');
+
+        // Add user message
+        const userMsg = document.createElement('div');
+        userMsg.className = 'chat-message outbound fade-in';
+        userMsg.innerHTML = `<div class="chat-bubble">${body}</div><div class="chat-meta">Just now</div>`;
+        container.appendChild(userMsg);
+
+        input.value = '';
+        container.scrollTop = container.scrollHeight;
+
+        // Simulate AI response
+        setTimeout(() => {
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'chat-message inbound fade-in';
+            aiMsg.innerHTML = `<div class="chat-bubble">Thank you for your message! A team member will get back to you shortly. Is there anything else I can help with?</div><div class="chat-meta">Just now</div>`;
+            container.appendChild(aiMsg);
+            container.scrollTop = container.scrollHeight;
+        }, 1000);
+    }
+
+    // ===================================================================
+    // Campaigns
+    // ===================================================================
+    function renderCampaigns() {
+        const grid = document.getElementById('campaigns-grid');
+        grid.innerHTML = DEMO_CAMPAIGNS.map(c => `
+            <div class="table-container" style="padding: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 15px;">${c.name}</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${c.description}</div>
+                    </div>
+                    <span class="badge badge-active">${c.status}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px;">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Sent</div>
+                        <div style="font-size: 20px; font-weight: 600;">${c.sent}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Replied</div>
+                        <div style="font-size: 20px; font-weight: 600;">${c.replied}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Booked</div>
+                        <div style="font-size: 20px; font-weight: 600; color: var(--success);">${c.booked}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-muted);">Response Rate</div>
+                        <div style="font-size: 20px; font-weight: 600;">${((c.replied/c.sent)*100).toFixed(1)}%</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ===================================================================
+    // Actions
+    // ===================================================================
+    function sendMessage(patientId) {
+        const patient = DEMO_PATIENTS.find(p => p.id === patientId);
+        if (!patient) return;
+        alert(`Sending recapture message to ${patient.first_name} ${patient.last_name}...\n\nIn production, this would:\n1. Check policy (consent, frequency caps, quiet hours)\n2. Generate personalized message via AI\n3. Send via ${patient.phone ? 'SMS' : 'email'}\n4. Track delivery and response`);
+    }
+
+    function viewPatient(patientId) {
+        const patient = DEMO_PATIENTS.find(p => p.id === patientId);
+        if (!patient) return;
+        alert(`Patient: ${patient.first_name} ${patient.last_name}\nPhone: ${patient.phone}\nEmail: ${patient.email}\nState: ${patient.state}\nNotes: ${patient.notes}\n\nIn production, this would show the full patient timeline, appointment history, and communication log.`);
+    }
+
+    // ===================================================================
+    // Init
+    // ===================================================================
+    function init() {
+        initDashboard();
+        renderPatients(DEMO_PATIENTS);
+        renderOpportunities();
+        renderConversations();
+        renderCampaigns();
+    }
+
+    init();
+    </script>
+</body>
+</html>
